@@ -620,7 +620,31 @@ class GeminiDDP(ModelWrapper):
 
         prefix = ""
         local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
+
+        is_lora = False
+        for key, value in self.state_dict().items():
+            if "lora" in key:
+                is_lora = True
+                break
+        if is_lora:
+            tmp = dict()
+            for key, value in state_dict.items():
+                key = f"base_model.model.{key}"
+                if "q_proj" in key or "v_proj" in key:
+                    last = key.split(".")[-1]
+                    key = key.replace(last, "")
+                    key += f"base_layer.{last}"
+                tmp[key] = value
+            state_dict = tmp
+            strict = False
+
         self._load_from_state_dict(state_dict, prefix, local_metadata, True, missing_keys, unexpected_keys, error_msgs)
+
+        if is_lora:
+            error_msgs.insert(
+                0,
+                f"[LORA]missing keys: {missing_keys}, unexpected keys: {unexpected_keys}",
+            )
 
         if strict:
             if len(unexpected_keys) > 0:
