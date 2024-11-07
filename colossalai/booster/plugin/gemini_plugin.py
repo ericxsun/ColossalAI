@@ -484,6 +484,7 @@ class GeminiPlugin(DPPluginBase):
         use_fp8: bool = False,
         verbose: bool = False,
         fp8_communication: bool = False,
+        collect_states_type: str = "gpu",
     ) -> None:
         super().__init__()
         assert precision in SUPPORTED_PRECISION, f"precision {precision} is not supported"
@@ -534,6 +535,7 @@ class GeminiPlugin(DPPluginBase):
             max_scale=max_scale,
             max_norm=max_norm,
             norm_type=norm_type,
+            collect_states_type=collect_states_type,
         )
         self.enable_tensor_parallelism = tp_size > 1
         self.enable_all_optimization = enable_all_optimization

@@ -121,6 +121,9 @@ class GeminiOptimizer(OptimizerWrapper):
         assert type(optim) in _AVAIL_OPTIM_LIST, (
             "You should use an optimizer in the available list:\n" f"{_AVAIL_OPTIM_LIST}"
         )
+
+        self.collect_states_type = defaults.pop("collect_states_type", "gpu")
+
         self.module = module
         self.gemini_manager = module.gemini_manager
         self.chunk_manager: ChunkManager = self.gemini_manager.chunk_manager
@@ -594,7 +597,16 @@ class GeminiOptimizer(OptimizerWrapper):
                 compacted_size += 1
             else:
                 compacted_size += shard_size
-        compacted_states = torch.zeros(compacted_size, dtype=dtype, device=device, requires_grad=False)
+
+        _device = device
+        if self.collect_states_type == "cpu":
+            _device = None
+        elif self.collect_states_type == "gpu":
+            pass
+        elif self.collect_states_type == "gpus":
+            _device = get_accelerator().get_current_device()
+
+        compacted_states = torch.zeros(compacted_size, dtype=dtype, device=_device, requires_grad=False)
 
         next_state_offset = 0
         for state_name, state_tensor in states.items():
