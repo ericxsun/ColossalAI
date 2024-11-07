@@ -95,7 +95,7 @@ else:
     ext_modules = []
 
 version = get_version()
-package_name = "colossalai"
+package_name = "custom-colossalai"
 
 setup(
     name=package_name,
