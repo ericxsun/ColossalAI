@@ -484,7 +484,7 @@ class GeminiPlugin(DPPluginBase):
         use_fp8: bool = False,
         verbose: bool = False,
         fp8_communication: bool = False,
-        collect_states_type: str = "gpu",
+        **kwargs
     ) -> None:
         super().__init__()
         assert precision in SUPPORTED_PRECISION, f"precision {precision} is not supported"
@@ -535,7 +535,7 @@ class GeminiPlugin(DPPluginBase):
             max_scale=max_scale,
             max_norm=max_norm,
             norm_type=norm_type,
-            collect_states_type=collect_states_type,
+            collect_states_type=kwargs.get("collect_states_type", "gpu"),
         )
         self.enable_tensor_parallelism = tp_size > 1
         self.enable_all_optimization = enable_all_optimization
@@ -570,6 +570,7 @@ class GeminiPlugin(DPPluginBase):
             enable_jit_fused=self.enable_jit_fused,
             enable_sequence_parallelism=self.enable_sequence_parallelism,
         )
+        self.shard_policy = kwargs.get("shard_policy", None)
 
     def __del__(self):
         """Destroy the process groups in ProcessGroupMesh"""
@@ -679,7 +680,7 @@ class GeminiPlugin(DPPluginBase):
             # wrap the model with Gemini
             if self.enable_tensor_parallelism:
                 shardformer = ShardFormer(self.shard_config)
-                model, _ = shardformer.optimize(model)
+                model, _ = shardformer.optimize(model, self.shard_policy)
 
             model = GeminiDDP(
                 model,
